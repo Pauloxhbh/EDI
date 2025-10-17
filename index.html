@@ -1,36 +1,67 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ecos da Masmorra Infinita</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RPG Masmorra Infinita</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="game-container" id="menu">
-    <h1>Ecos da Masmorra Infinita</h1>
-    <p>Escolha sua classe:</p>
-    <select id="classe">
-      <option>Domador</option>
-      <option>Guerreiro Dragão</option>
-      <option>Buda</option>
-      <option>Necromante</option>
-    </select><br>
-    <input id="nome" placeholder="Nome do herói" /><br>
-    <button id="iniciar">Começar</button>
-  </div>
 
-  <div class="game-container" id="jogo" style="display:none;">
-    <h2 id="titulo"></h2>
-    <img id="spriteJogador" class="sprite" alt="heroi" />
-    <div id="status"></div>
-    <button id="descer">Descer na Masmorra</button>
-    <div id="batalha"></div>
-    <div id="energia"></div>
-    <button id="meditar">Meditar</button>
-    <button id="treinar">Treinar</button>
-  </div>
+<!-- Menu Inicial -->
+<div id="menu" class="tela">
+  <h1>RPG Masmorra Infinita</h1>
+  <input type="text" id="nome" placeholder="Digite seu nome">
+  <select id="classe">
+    <option value="guerreiro">Guerreiro</option>
+    <option value="domador">Domador</option>
+    <option value="necromante">Necromante</option>
+    <option value="buda">Buda</option>
+    <option value="dragao">Guerreiro Dragão</option>
+  </select>
+  <button id="iniciar">Iniciar Jogo</button>
+</div>
 
-  <script src="script.js"></script>
+<!-- Barra de Navegação -->
+<nav class="nav" style="display:none;">
+  <button onclick="mostrarTela('telaTorre')">Torre</button>
+  <button onclick="mostrarTela('telaMeditacao')">Meditação</button>
+  <button onclick="mostrarTela('telaTreino')">Treinamento</button>
+  <button onclick="mostrarTela('telaLoja')">Loja</button>
+</nav>
+
+<!-- Torre / Masmorra -->
+<div id="telaTorre" class="tela" style="display:none;">
+  <h2>Torre - Andar <span id="andarAtual">1</span></h2>
+  <img id="spriteJogador" src="" alt="Jogador" class="sprite">
+  <div id="status"></div>
+  <div id="energia"></div>
+  <button id="descer">Descer Masmorra</button>
+  <div id="batalha"></div>
+</div>
+
+<!-- Meditação -->
+<div id="telaMeditacao" class="tela" style="display:none;">
+  <h2>Meditação</h2>
+  <img id="spriteMeditacao" src="" class="sprite">
+  <div id="energiaMeditacao"></div>
+  <button id="botaoMeditar">Meditar 30s</button>
+</div>
+
+<!-- Treinamento -->
+<div id="telaTreino" class="tela" style="display:none;">
+  <h2>Treinamento</h2>
+  <p>Aumente seu Dano e Defesa!</p>
+  <button id="botaoTreinar">Treinar</button>
+</div>
+
+<!-- Loja -->
+<div id="telaLoja" class="tela" style="display:none;">
+  <h2>Loja</h2>
+  <p>Compre poções e upgrades com XP</p>
+  <button id="comprarPocao">Comprar Poção (10 XP)</button>
+</div>
+
+<script src="script.js"></script>
 </body>
-  </html>
+</html>
