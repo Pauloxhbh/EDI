@@ -1,207 +1,160 @@
-const menu = document.getElementById('menu');
-const jogo = document.getElementById('jogo');
-const iniciar = document.getElementById('iniciar');
-const classeSel = document.getElementById('classe');
-const nomeSel = document.getElementById('nome');
-const titulo = document.getElementById('titulo');
+// Elementos
 const spriteJogador = document.getElementById('spriteJogador');
 const statusDiv = document.getElementById('status');
-const meditarBtn = document.getElementById('meditar');
-const treinarBtn = document.getElementById('treinar');
-const batalhaDiv = document.getElementById('batalha');
 const energiaDiv = document.getElementById('energia');
 const descerBtn = document.getElementById('descer');
+const batalhaDiv = document.getElementById('batalha');
+const andarSpan = document.getElementById('andarAtual');
 
-let player = {};
-let energia = 0;
-let meditando = false;
-let cooldownMeditacao = false;
-let cooldownTreino = false;
+let player = {}, energia = 0, meditando = false, cooldownMeditacao = false, cooldownTreino = false, andarAtual = 1;
 
-// Sprites
-function gerarSprite(seed) {
-  return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${seed}`;
+// Sprites das classes
+const sprites = {
+  guerreiro: { idle:'sprites/guerreiro_idle.png', ataque:'sprites/guerreiro_ataque.png', dano:'sprites/guerreiro_dano.png', meditar:'sprites/guerreiro_meditar.png' },
+  domador: { idle:'sprites/domador_idle.png', ataque:'sprites/domador_ataque.png', dano:'sprites/domador_dano.png', meditar:'sprites/domador_meditar.png' },
+  necromante: { idle:'sprites/necromante_idle.png', ataque:'sprites/necromante_ataque.png', dano:'sprites/necromante_dano.png', meditar:'sprites/necromante_meditar.png' },
+  buda: { idle:'sprites/buda_idle.png', ataque:'sprites/buda_ataque.png', dano:'sprites/buda_dano.png', meditar:'sprites/buda_meditar.png' },
+  dragao: { idle:'sprites/dragao_idle.png', ataque:'sprites/dragao_ataque.png', dano:'sprites/dragao_dano.png', meditar:'sprites/dragao_meditar.png' }
+};
+
+// Gerar inimigos
+function gerarInimigo(){
+  let inimigo;
+  if(andarAtual % 5 === 0){ // Chefe
+    inimigo = {
+      nome: `Chefe do Andar ${andarAtual}`,
+      hp: 150 + andarAtual*10,
+      dano: 20 + andarAtual*2,
+      def: 10 + Math.floor(andarAtual/2),
+      sprite: 'sprites/chefe.png',
+      drop: 'poção'
+    };
+  } else { // Inimigos normais
+    const inimigosBase = [
+      {nome:'Goblin',hp:30,dano:5,def:2,sprite:'sprites/goblin.png'},
+      {nome:'Esqueleto',hp:40,dano:6,def:3,sprite:'sprites/esqueleto.png'},
+      {nome:'Lobo',hp:50,dano:7,def:4,sprite:'sprites/lobo.png'},
+      {nome:'Morcego Gigante',hp:35,dano:8,def:2,sprite:'sprites/morcego.png'}
+    ];
+    inimigo = {...inimigosBase[Math.floor(Math.random()*inimigosBase.length)]};
+    // Escalar com andar
+    inimigo.hp += andarAtual * 5;
+    inimigo.dano += Math.floor(andarAtual * 1.2);
+    inimigo.def += Math.floor(andarAtual/2);
+    inimigo.drop = 'poção';
+  }
+  return inimigo;
 }
-function gerarSpriteInimigo(seed) {
-  return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${seed}`;
-}
 
-// Iniciar jogo
-iniciar.addEventListener('click', () => {
-  if (!nomeSel.value) return alert('Digite um nome!');
-  player = {
-    nome: nomeSel.value,
-    classe: classeSel.value,
-    hp: 100,
-    dano: 10,
-    def: 5,
-    nivel: 1,
-    xp: 0,
-    itens: { pocao: 2 }
-  };
-  spriteJogador.src = gerarSprite(player.nome + player.classe);
-  titulo.textContent = `${player.nome} - ${player.classe}`;
-  atualizarStatus();
-  menu.style.display = 'none';
-  jogo.style.display = 'flex';
-});
-
-// Atualiza status e barra de HP
-function atualizarStatus() {
-  const hpPercent = Math.max(player.hp, 0);
+// Atualizar status
+function atualizarStatus(){
+  const hpPercent = Math.max(player.hp,0);
   statusDiv.innerHTML = `
     <p>HP: ${hpPercent} | Dano: ${player.dano} | Def: ${player.def} | Nível: ${player.nivel} | XP: ${player.xp}</p>
     <p>Itens: Poções ${player.itens.pocao}</p>
     <div id="barraJogador"><div style="width:${hpPercent}%"></div></div>
   `;
   energiaDiv.innerHTML = `Energia natural: ${energia} ${meditando ? '<span class="energiaAnimada"></span><span class="energiaAnimada"></span>' : ''}`;
+  andarSpan.textContent = andarAtual;
 }
 
-// Meditar com animação e vibração
-meditarBtn.addEventListener('click', () => {
-  if (cooldownMeditacao) return;
-  meditando = true;
-  cooldownMeditacao = true;
-  let tempo = 30;
-  energiaDiv.innerHTML = `Meditando... ${tempo}s <span class="energiaAnimada"></span>`;
-  if (navigator.vibrate) navigator.vibrate(50);
-
-  const intervalo = setInterval(() => {
-    tempo--;
-    energia++;
-    energiaDiv.innerHTML = `Meditando... ${tempo}s | Energia: ${energia} <span class="energiaAnimada"></span>`;
-    if (tempo <= 0) {
-      clearInterval(intervalo);
-      meditando = false;
-      energiaDiv.innerHTML = `Meditação concluída! Energia total: ${energia}`;
-      setTimeout(() => {
-        cooldownMeditacao = false;
-        energiaDiv.innerHTML = 'Meditação pronta novamente.';
-      }, 90000); // cooldown 90s
-    }
-  }, 1000);
-});
-
-// Treinar com animação e vibração
-treinarBtn.addEventListener('click', () => {
-  if (cooldownTreino) return;
-  cooldownTreino = true;
-  player.dano += 2;
-  player.def += 1;
-  atualizarStatus();
-  energiaDiv.textContent = 'Treinando... Dano e defesa aumentados!';
-  if (navigator.vibrate) navigator.vibrate(50);
-  setTimeout(() => {
-    cooldownTreino = false;
-    energiaDiv.textContent = 'Treino disponível novamente.';
-  }, 10000); // cooldown 10s
-});
-
-// Gerar inimigos
-function gerarInimigo(nivel) {
-  const inimigos = [
-    { nome: 'Goblin', hp: 30, dano: 5, def: 2 },
-    { nome: 'Esqueleto', hp: 40, dano: 6, def: 3 },
-    { nome: 'Lobo', hp: 50, dano: 7, def: 4 },
-    { nome: 'Morcego Gigante', hp: 35, dano: 8, def: 2 }
-  ];
-  const inimigo = { ...inimigos[Math.floor(Math.random() * inimigos.length)] };
-  inimigo.hp += nivel * 5;
-  inimigo.dano += nivel * 1;
-  inimigo.def += Math.floor(nivel / 2);
-  inimigo.sprite = gerarSpriteInimigo(inimigo.nome);
-  return inimigo;
+// Mostrar mensagem na batalha
+function mostrarMensagem(msg){
+  batalhaDiv.innerHTML += `<p>${msg}</p>`;
+  batalhaDiv.scrollTop = batalhaDiv.scrollHeight;
 }
 
-// Botão Descer na Masmorra
-descerBtn.addEventListener('click', () => {
-  const inimigo = gerarInimigo(player.nivel);
+// Função de batalha
+descerBtn.addEventListener('click', ()=>{
+  andarAtual++;
+  const inimigo = gerarInimigo();
   batalhaDiv.innerHTML = `
-    <h3>Você encontrou um ${inimigo.nome}!</h3>
-    <img src="${inimigo.sprite}" class="sprite" alt="${inimigo.nome}">
-    <div id="barraInimigo"><div style="width:${inimigo.hp}%"></div></div>
-    <button id="atacar">Atacar</button>
-    <button id="habilidade">Habilidade</button>
-    <button id="item">Usar Item</button>
-    <button id="fugir">Fugir</button>
+    <h3>Andar ${andarAtual} - ${inimigo.nome} aparece!</h3>
+    <div class="card">
+      <img src="${inimigo.sprite}" class="sprite" alt="${inimigo.nome}">
+      <div id="barraInimigo"><div style="width:${inimigo.hp}%"></div></div>
+      <button id="atacar">Atacar</button>
+      <button id="habilidade">Habilidade</button>
+      <button id="item">Usar Item</button>
+      <button id="fugir">Fugir</button>
+    </div>
   `;
 
-  const barraInimigo = document.getElementById('barraInimigo');
+  const barraInimigo = document.querySelector('#barraInimigo div');
+  let batalhaAtiva = true;
 
-  function atualizarBarraInimigo() {
-    const hpPercent = Math.max(inimigo.hp, 0);
-    barraInimigo.querySelector('div').style.width = `${hpPercent}%`;
-  }
-
-  function verificarFimBatalha() {
-    if (inimigo.hp <= 0) {
-      batalhaDiv.innerHTML = `<p>${inimigo.nome} derrotado! Você ganhou 10 XP.</p>`;
-      player.xp += 10;
-      player.nivel = Math.floor(player.xp / 50) + 1;
+  function fimBatalha(vitoria){
+    batalhaAtiva=false;
+    if(vitoria){
+      player.xp += andarAtual*5;
+      player.nivel = Math.floor(player.xp/50)+1;
+      // Drop
+      if(inimigo.drop === 'poção'){
+        player.itens.pocao++;
+        mostrarMensagem(`${inimigo.nome} dropou 1 poção!`);
+      }
+      mostrarMensagem(`${inimigo.nome} derrotado! Você ganhou ${andarAtual*5} XP.`);
       atualizarStatus();
-      return true;
+    } else {
+      mostrarMensagem(`Você foi derrotado pelo ${inimigo.nome}...`);
     }
-    if (player.hp <= 0) {
-      batalhaDiv.innerHTML = `<p>Você foi derrotado pelo ${inimigo.nome}...</p>`;
-      return true;
-    }
-    return false;
   }
 
-  // Atacar
-  document.getElementById('atacar').addEventListener('click', () => {
-    const danoCausado = Math.max(player.dano - inimigo.def, 1);
-    inimigo.hp -= danoCausado;
-    atualizarBarraInimigo();
+  function turnoJogador(acao){
+    if(!batalhaAtiva) return;
 
-    // Animação inimigo
-    const imgInimigo = batalhaDiv.querySelector('img');
-    imgInimigo.classList.add('atacado');
-    setTimeout(() => imgInimigo.classList.remove('atacado'), 300);
+    if(acao==='atacar'){
+      spriteJogador.src = sprites[player.classe].ataque;
+      setTimeout(()=>spriteJogador.src=sprites[player.classe].idle,300);
+      const dano = Math.max(player.dano - inimigo.def,1);
+      inimigo.hp -= dano;
+      barraInimigo.style.width = Math.max(inimigo.hp,0)+'%';
+      mostrarMensagem(`Você causou ${dano} de dano ao ${inimigo.nome}`);
+    } else if(acao==='habilidade'){
+      if(energia >= 5){
+        spriteJogador.src = sprites[player.classe].ataque;
+        setTimeout(()=>spriteJogador.src=sprites[player.classe].idle,300);
+        const dano = player.dano*2;
+        inimigo.hp -= dano;
+        energia -= 5;
+        barraInimigo.style.width = Math.max(inimigo.hp,0)+'%';
+        mostrarMensagem(`Habilidade usada! ${dano} de dano ao ${inimigo.nome}`);
+      } else mostrarMensagem('Energia insuficiente!');
+    } else if(acao==='item'){
+      if(player.itens.pocao>0){
+        player.hp += 30; player.itens.pocao--;
+        atualizarStatus();
+        mostrarMensagem('Você usou uma poção e recuperou 30 HP!');
+      } else mostrarMensagem('Sem poções!');
+    } else if(acao==='fugir'){
+      mostrarMensagem(`Você fugiu do ${inimigo.nome}!`);
+      return fimBatalha(false);
+    }
 
-    let msg = `Você causou ${danoCausado} de dano ao ${inimigo.nome}.<br>`;
-    if (!verificarFimBatalha()) {
-      const danoRecebido = Math.max(inimigo.dano - player.def, 1);
+    if(inimigo.hp<=0) return fimBatalha(true);
+
+    // Turno inimigo
+    setTimeout(()=>{
+      if(!batalhaAtiva) return;
+      const danoRecebido = Math.max(inimigo.dano - player.def,1);
       player.hp -= danoRecebido;
       atualizarStatus();
-      msg += `${inimigo.nome} atacou você e causou ${danoRecebido} de dano.`;
-      verificarFimBatalha();
-    }
-    batalhaDiv.innerHTML += `<p>${msg}</p>`;
-  });
+      mostrarMensagem(`${inimigo.nome} atacou você e causou ${danoRecebido} de dano`);
+      if(player.hp<=0) fimBatalha(false);
+    },500);
+  }
 
-  // Habilidade
-  document.getElementById('habilidade').addEventListener('click', () => {
-    if (energia >= 5) {
-      const danoEspecial = player.dano * 2;
-      inimigo.hp -= danoEspecial;
-      energia -= 5;
-      atualizarBarraInimigo();
-      batalhaDiv.innerHTML += `<p>Você usou habilidade especial e causou ${danoEspecial} de dano!</p>`;
-      if (!verificarFimBatalha()) {
-        const danoRecebido = Math.max(inimigo.dano - player.def, 1);
-        player.hp -= danoRecebido;
-        atualizarStatus();
-      }
-    } else {
-      batalhaDiv.innerHTML += `<p>Energia insuficiente para habilidade!</p>`;
-    }
-  });
-
-  // Item
-  document.getElementById('item').addEventListener('click', () => {
-    if (player.itens.pocao > 0) {
-      player.hp += 30;
-      player.itens.pocao--;
-      atualizarStatus();
-      batalhaDiv.innerHTML += `<p>Você usou uma poção e recuperou 30 HP!</p>`;
-    } else {
-      batalhaDiv.innerHTML += `<p>Você não tem poções!</p>`;
-    }
-  });
-
-  // Fugir
-  document.getElementById('fugir').addEventListener('click', () => {
-    batalhaDiv.innerHTML += `<p>Você fugiu do ${inimigo.nome}!</p>`;
-  });
+  document.getElementById('atacar').onclick = ()=>turnoJogador('atacar');
+  document.getElementById('habilidade').onclick = ()=>turnoJogador('habilidade');
+  document.getElementById('item').onclick = ()=>turnoJogador('item');
+  document.getElementById('fugir').onclick = ()=>turnoJogador('fugir');
 });
+
+// Atualiza status inicial
+function iniciarJogo(){
+  player={nome:'Herói',classe:'guerreiro',hp:100,dano:10,def:5,nivel:1,xp:0,itens:{pocao:2}};
+  spriteJogador.src=sprites[player.classe].idle;
+  atualizarStatus();
+}
+
+iniciarJogo();
